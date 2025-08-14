@@ -1,3 +1,5 @@
+import { apiClient } from './apiClient';
+
 export interface Category {
   id: string;
   name: string;
