@@ -19,8 +19,27 @@ export default function Queries() {
   const [testLoading, setTestLoading] = useState(false);
   const [showTestResults, setShowTestResults] = useState(false);
   
-  const categories = categoryRepo.getAll();
+  const [categories, setCategories] = useState<any[]>([]);
+  const [categoriesError, setCategoriesError] = useState<string | null>(null);
+  
   const settings = useAdminStore(state => state.settings);
+
+  // Load categories on component mount
+  React.useEffect(() => {
+    async function loadCategories() {
+      try {
+        const fetchedCategories = await categoryRepo.getAll();
+        setCategories(Array.isArray(fetchedCategories) ? fetchedCategories : []);
+        setCategoriesError(null);
+      } catch (error) {
+        console.error('Error loading categories:', error);
+        setCategories([]);
+        setCategoriesError('Failed to load categories. Please check database connection.');
+      }
+    }
+    
+    loadCategories();
+  }, []);
 
   const handleAddQuery = () => {
     if (!newQuery.trim() || !selectedCategory) return;
@@ -80,6 +99,21 @@ export default function Queries() {
         <p className="text-gray-600">Manage popular search queries for each category.</p>
       </div>
 
+      {/* Categories Error Message */}
+      {categoriesError && (
+        <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-8">
+          <div className="flex items-center">
+            <div className="text-red-600">
+              <h3 className="text-sm font-medium">Database Connection Error</h3>
+              <p className="text-xs mt-1">{categoriesError}</p>
+              <p className="text-xs mt-1">
+                Please check your database configuration in <code>api/config/database.php</code>
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Add Query Form */}
       <div className="bg-white rounded-lg shadow-md p-6 mb-8">
         <h2 className="text-lg font-bold text-gray-900 mb-4">Add Popular Query</h2>
@@ -89,6 +123,7 @@ export default function Queries() {
             value={selectedCategory}
             onChange={(e) => setSelectedCategory(e.target.value)}
             className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+            disabled={categories.length === 0}
           >
             <option value="">Select Category</option>
             {categories.map((category) => (
@@ -108,7 +143,7 @@ export default function Queries() {
           
           <button
             onClick={handleAddQuery}
-            disabled={!newQuery.trim() || !selectedCategory}
+            disabled={!newQuery.trim() || !selectedCategory || categories.length === 0}
             className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 disabled:bg-gray-400 transition-colors flex items-center"
           >
             <Plus className="h-4 w-4 mr-2" />
