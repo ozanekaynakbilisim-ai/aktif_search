@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
+import { useEffect } from 'react';
 import { Plus, Edit, Trash2, Eye } from 'lucide-react';
-import { categoryRepo } from '../lib/mysqlRepo';
-import type { Category } from '../lib/mysqlRepo';
+import { categoryRepo } from '../lib/repo';
+import type { Category } from '../lib/repo';
 
 export default function Categories() {
   const [categories, setCategories] = useState([]);

@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
+import { useEffect } from 'react';
 import { Plus, Edit, Trash2, ExternalLink } from 'lucide-react';
-import { referenceSiteRepo } from '../lib/mysqlRepo';
-import type { ReferenceSite } from '../lib/mysqlRepo';
+import { referenceSiteRepo } from '../lib/repo';
+import type { ReferenceSite } from '../lib/repo';
 
 export default function ReferenceCSESites() {
   const [sites, setSites] = useState([]);

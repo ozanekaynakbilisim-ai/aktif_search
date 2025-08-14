@@ -1,4 +1,5 @@
 import React from 'react';
+import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { 
   BarChart3, 
@@ -10,7 +11,7 @@ import {
   TrendingUp,
   Eye
 } from 'lucide-react';
-import { categoryRepo, articleRepo } from '../lib/mysqlRepo';
+import { categoryRepo, articleRepo } from '../lib/repo';
 import { useAdminStore } from '../lib/adminStore';
 
 export default function Dashboard() {

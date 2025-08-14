@@ -1,4 +1,5 @@
 import React from 'react';
+import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowRight, CreditCard, DollarSign, Building, TrendingUp, Shield } from 'lucide-react';
 import HomeSearch from '../components/HomeSearch';
@@ -6,7 +7,7 @@ import SeoHead from '../components/SeoHead';
 import NewsSection from '../components/NewsSection';
 import CurrencyWidget from '../components/CurrencyWidget';
 import YouTubeVideos from '../components/YouTubeVideos';
-import { categoryRepo, articleRepo } from '../lib/mysqlRepo';
+import { categoryRepo, articleRepo } from '../lib/repo';
 import { useAdminStore } from '../lib/adminStore';
 
 export default function Home() {
@@ -172,7 +173,7 @@ export default function Home() {
                 <p className="text-gray-600 mb-4 text-sm">{article.excerpt}</p>
                 <div className="flex items-center justify-between text-xs text-gray-500">
                   <span>{article.author}</span>
-                  <span>{new Date(article.publishDate).toLocaleDateString()}</span>
+                  <span>{new Date(article.publish_date).toLocaleDateString()}</span>
                 </div>
               </Link>
             ))}

@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
+import { apiClient } from './apiClient';
 
 export interface AdminSettings {
   // Branding
@@ -119,7 +120,8 @@ export interface AdminSettings {
 
 interface AdminStore {
   settings: AdminSettings;
-  updateSettings: (updates: Partial<AdminSettings>) => void;
+  updateSettings: (updates: Partial<AdminSettings>) => Promise<void>;
+  loadSettings: () => Promise<void>;
   resetSettings: () => void;
   isAuthenticated: boolean;
   setAuthenticated: (auth: boolean) => void;
@@ -223,18 +225,44 @@ const defaultSettings: AdminSettings = {
 
 export const useAdminStore = create<AdminStore>()(
   persist(
-    (set) => ({
+    (set, get) => ({
       settings: defaultSettings,
       isAuthenticated: false,
-      updateSettings: (updates) =>
-        set((state) => ({
-          settings: { ...state.settings, ...updates }
-        })),
+      
+      updateSettings: async (updates) => {
+        const newSettings = { ...get().settings, ...updates };
+        set({ settings: newSettings });
+        
+        try {
+          await apiClient.updateSettings(newSettings);
+        } catch (error) {
+          console.error('Failed to save settings to database:', error);
+          // Revert local changes if database update fails
+          set({ settings: get().settings });
+          throw error;
+        }
+      },
+      
+      loadSettings: async () => {
+        try {
+          const serverSettings = await apiClient.getSettings();
+          const mergedSettings = { ...defaultSettings, ...serverSettings };
+          set({ settings: mergedSettings });
+        } catch (error) {
+          console.error('Failed to load settings from database:', error);
+          // Use default settings if loading fails
+          set({ settings: defaultSettings });
+        }
+      },
+      
       resetSettings: () => set({ settings: defaultSettings }),
       setAuthenticated: (auth) => set({ isAuthenticated: auth })
     }),
     {
-      name: 'admin-settings'
+      name: 'admin-settings',
+      partialize: (state) => ({ 
+        isAuthenticated: state.isAuthenticated 
+      })
     }
   )
 );

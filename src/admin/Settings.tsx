@@ -1,11 +1,17 @@
 import React, { useState } from 'react';
+import { useEffect } from 'react';
 import { Save, TestTube, CheckCircle, XCircle, Eye, EyeOff } from 'lucide-react';
-import { useAdminStore } from '../lib/mysqlAdminStore';
+import { useAdminStore } from '../lib/adminStore';
 import { fetchFinanceNews } from '../lib/newsApi';
 import { fetchYouTubeVideos } from '../lib/youtubeApi';
 
 export default function Settings() {
   const { settings, updateSettings } = useAdminStore();
+  
+  useEffect(() => {
+    // Load settings from database on component mount
+    useAdminStore.getState().loadSettings();
+  }, []);
   const [activeTab, setActiveTab] = useState('branding');
   const [testResults, setTestResults] = useState<any>({});
   const [testing, setTesting] = useState<string | null>(null);

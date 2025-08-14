@@ -1,9 +1,10 @@
 import React from 'react';
+import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { ArrowRight } from 'lucide-react';
 import SeoHead from '../components/SeoHead';
 import PopularQueries from '../components/PopularQueries';
-import { categoryRepo, articleRepo } from '../lib/mysqlRepo';
+import { categoryRepo, articleRepo } from '../lib/repo';
 import { generateBreadcrumbJSONLD } from '../lib/seo';
 
 export default function Category() {
@@ -107,7 +108,7 @@ export default function Category() {
 
         {/* Popular Queries */}
         <PopularQueries 
-          queries={category.popularQueries} 
+          queries={category.popular_queries} 
           containerId="category-results"
         />
 
@@ -136,7 +137,7 @@ export default function Category() {
                   </p>
                 </div>
                 <div className="text-xs text-gray-500">
-                  {new Date(article.publishDate).toLocaleDateString()}
+                  {new Date(article.publish_date).toLocaleDateString()}
                 </div>
               </Link>
             ))}

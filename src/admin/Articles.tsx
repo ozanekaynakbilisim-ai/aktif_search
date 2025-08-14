@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
+import { useEffect } from 'react';
 import { Plus, Edit, Trash2, Eye, Calendar, Wand2, Loader } from 'lucide-react';
-import { articleRepo, categoryRepo } from '../lib/mysqlRepo';
+import { articleRepo, categoryRepo } from '../lib/repo';
 import { generateArticleContent } from '../lib/contentGen';
 import { useAdminStore } from '../lib/adminStore';
-import type { Article } from '../lib/mysqlRepo';
+import type { Article } from '../lib/repo';
 
 export default function Articles() {
   const [articles, setArticles] = useState([]);
@@ -81,7 +82,7 @@ export default function Articles() {
       title: article.title,
       slug: article.slug,
       excerpt: article.excerpt,
-      heroImage: article.heroImage,
+      heroImage: article.hero_image,
       content: article.content,
       author: article.author,
       categoryId: article.category_id,
@@ -225,7 +226,7 @@ export default function Articles() {
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
               {articles.map((article) => {
-                const category = categories.find(c => c.id === article.category_id);
+                          {article.hero_image ? (
                 return (
                   <tr key={article.id} className="hover:bg-gray-50">
                     <td className="px-6 py-4">
@@ -265,7 +266,7 @@ export default function Articles() {
                     </td>
                     <td className="px-6 py-4 text-sm text-gray-900">
                       {article.word_count}
-                      <span className="text-xs text-gray-500 ml-1">
+                          ({article.disable_ads ? '0' : article.word_count >= settings.adRules.lowWordCount ? settings.adRules.highWordAds : settings.adRules.lowWordAds} ads)
                         ({article.disable_ads ? '0' : article.word_count >= settings.adRules.lowWordCount ? settings.adRules.highWordAds : settings.adRules.lowWordAds} ads)
                       </span>
                     </td>

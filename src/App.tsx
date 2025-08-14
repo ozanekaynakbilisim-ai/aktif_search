@@ -1,5 +1,6 @@
 import React from 'react';
 import { useEffect } from 'react';
+import { useEffect } from 'react';
 import { Routes, Route } from 'react-router-dom';
 import Header from './components/Header';
 import Footer from './components/Footer';
@@ -18,7 +19,7 @@ import Users from './admin/Users';
 import ReferenceCSESites from './admin/ReferenceCSESites';
 import ContentAutomation from './admin/ContentAutomation';
 import SEOTools from './admin/SEOTools';
-import { useAdminStore } from './lib/mysqlAdminStore';
+import { useAdminStore } from './lib/adminStore';
 
 function App() {
   const loadSettings = useAdminStore(state => state.loadSettings);

@@ -9,7 +9,7 @@ import NewsSection from '../components/NewsSection';
 import YouTubeVideos from '../components/YouTubeVideos';
 import CurrencyWidget from '../components/CurrencyWidget';
 import { loadPSE, execute } from '../lib/pse';
-import { articleRepo, categoryRepo } from '../lib/mysqlRepo';
+import { articleRepo, categoryRepo } from '../lib/repo';
 import { generateArticleJSONLD, generateBreadcrumbJSONLD } from '../lib/seo';
 import { useAdminStore } from '../lib/adminStore';
 
@@ -120,7 +120,7 @@ export default function Article() {
       try {
         await loadPSE(cxId);
         // Use custom CSE keyword if provided, otherwise use article title
-        const searchKeyword = article.cseKeyword || article.title;
+        const searchKeyword = article.cse_keyword || article.title;
         setTimeout(() => {
           execute(searchKeyword, 'article-top-results');
           setCseLoaded(true);
@@ -178,7 +178,7 @@ export default function Article() {
         title={article.title}
         description={article.excerpt}
         path={`/article/${article.slug}`}
-        ogImage={article.heroImage}
+        ogImage={article.hero_image}
         articleData={{
           author: article.author,
           publishDate: article.publish_date
