@@ -8,7 +8,7 @@ RewriteRule . /index.html [L]
 
 # API istekleri için
 RewriteCond %{REQUEST_URI} ^/api/
-RewriteRule ^api/(.*)$ /api/$1 [L]
+RewriteRule ^api/([^/]+)/?$ api/$1/index.php [L]
 
 # CORS başlıkları - API istekleri için
 <IfModule mod_headers.c>
