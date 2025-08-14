@@ -18,9 +18,9 @@ class Database {
     public function __construct() {
         // cPanel MySQL ayarları - bu değerleri kendi veritabanı bilgilerinizle değiştirin
         $this->host = 'localhost'; // Genellikle localhost
-        $this->db_name = 'your_database_name'; // cPanel'de oluşturduğunuz veritabanı adı
-        $this->username = 'your_db_username'; // cPanel veritabanı kullanıcı adı
-        $this->password = 'your_db_password'; // cPanel veritabanı şifresi
+        $this->db_name = 'financeadd_db'; // cPanel'de oluşturduğunuz veritabanı adı
+        $this->username = 'financeadd_user'; // cPanel veritabanı kullanıcı adı
+        $this->password = 'FinanceAdd2025!'; // cPanel veritabanı şifresi
     }
 
     public function getConnection() {
