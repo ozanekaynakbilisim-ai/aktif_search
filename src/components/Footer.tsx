@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { useAdminStore } from '../lib/adminStore';
+import { useAdminStore } from '../lib/mysqlAdminStore';
 
 export default function Footer() {
   const { siteName, footerText, contactEmail } = useAdminStore(state => state.settings);

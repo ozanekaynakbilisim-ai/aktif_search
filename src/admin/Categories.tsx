@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
 import { Plus, Edit, Trash2, Eye } from 'lucide-react';
-import { categoryRepo } from '../lib/repo';
-import type { Category } from '../lib/repo';
+import { categoryRepo } from '../lib/mysqlRepo';
+import type { Category } from '../lib/mysqlRepo';
 
 export default function Categories() {
-  const [categories, setCategories] = useState(categoryRepo.getAll());
+  const [categories, setCategories] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
   const [editingCategory, setEditingCategory] = useState<Category | null>(null);
   const [formData, setFormData] = useState({
@@ -16,18 +17,37 @@ export default function Categories() {
     popularQueries: [] as string[]
   });
 
+  useEffect(() => {
+    loadCategories();
+  }, []);
+
+  const loadCategories = async () => {
+    try {
+      const data = await categoryRepo.getAll();
+      setCategories(data);
+    } catch (error) {
+      console.error('Error loading categories:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (editingCategory) {
-      categoryRepo.update(editingCategory.id, formData);
-    } else {
-      categoryRepo.create(formData);
+    try {
+      if (editingCategory) {
+        await categoryRepo.update(editingCategory.id, formData);
+      } else {
+        await categoryRepo.create(formData);
+      }
+      await loadCategories();
+      setShowModal(false);
+      resetForm();
+    } catch (error) {
+      console.error('Error saving category:', error);
+      alert('Failed to save category. Please try again.');
     }
-    
-    setCategories(categoryRepo.getAll());
-    setShowModal(false);
-    resetForm();
   };
 
   const handleEdit = (category: Category) => {
@@ -36,17 +56,22 @@ export default function Categories() {
       name: category.name,
       slug: category.slug,
       description: category.description,
-      heroImage: category.heroImage,
-      isHighCpc: category.isHighCpc,
-      popularQueries: category.popularQueries
+      heroImage: category.hero_image,
+      isHighCpc: category.is_high_cpc,
+      popularQueries: category.popular_queries
     });
     setShowModal(true);
   };
 
-  const handleDelete = (id: string) => {
+  const handleDelete = async (id: string) => {
     if (confirm('Are you sure you want to delete this category?')) {
-      categoryRepo.delete(id);
-      setCategories(categoryRepo.getAll());
+      try {
+        await categoryRepo.delete(id);
+        await loadCategories();
+      } catch (error) {
+        console.error('Error deleting category:', error);
+        alert('Failed to delete category. Please try again.');
+      }
     }
   };
 
@@ -78,6 +103,14 @@ export default function Categories() {
     }));
   };
 
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+      </div>
+    );
+  }
+
   return (
     <div>
       <div className="flex items-center justify-between mb-8">
@@ -100,11 +133,11 @@ export default function Categories() {
           <div key={category.id} className="bg-white rounded-lg shadow-md overflow-hidden">
             <div className="relative h-32">
               <img
-                src={category.heroImage}
+                src={category.hero_image}
                 alt={category.name}
                 className="w-full h-full object-cover"
               />
-              {category.isHighCpc && (
+              {category.is_high_cpc && (
                 <div className="absolute top-2 right-2 bg-green-500 text-white text-xs px-2 py-1 rounded">
                   High CPC
                 </div>
@@ -115,7 +148,7 @@ export default function Categories() {
               <h3 className="font-bold text-gray-900 mb-2">{category.name}</h3>
               <p className="text-sm text-gray-600 mb-3">{category.description}</p>
               <p className="text-xs text-gray-500 mb-4">
-                {category.popularQueries.length} popular queries
+                {category.popular_queries.length} popular queries
               </p>
               
               <div className="flex justify-between">

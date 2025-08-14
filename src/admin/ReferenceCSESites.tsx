@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
 import { Plus, Edit, Trash2, ExternalLink } from 'lucide-react';
-import { referenceSiteRepo } from '../lib/repo';
-import type { ReferenceSite } from '../lib/repo';
+import { referenceSiteRepo } from '../lib/mysqlRepo';
+import type { ReferenceSite } from '../lib/mysqlRepo';
 
 export default function ReferenceCSESites() {
-  const [sites, setSites] = useState(referenceSiteRepo.getAll());
+  const [sites, setSites] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
   const [editingSite, setEditingSite] = useState<ReferenceSite | null>(null);
   const [formData, setFormData] = useState({
@@ -14,18 +15,37 @@ export default function ReferenceCSESites() {
     notes: ''
   });
 
+  useEffect(() => {
+    loadSites();
+  }, []);
+
+  const loadSites = async () => {
+    try {
+      const data = await referenceSiteRepo.getAll();
+      setSites(data);
+    } catch (error) {
+      console.error('Error loading reference sites:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (editingSite) {
-      referenceSiteRepo.update(editingSite.id, formData);
-    } else {
-      referenceSiteRepo.create(formData);
+    try {
+      if (editingSite) {
+        await referenceSiteRepo.update(editingSite.id, formData);
+      } else {
+        await referenceSiteRepo.create(formData);
+      }
+      await loadSites();
+      setShowModal(false);
+      resetForm();
+    } catch (error) {
+      console.error('Error saving reference site:', error);
+      alert('Failed to save reference site. Please try again.');
     }
-    
-    setSites(referenceSiteRepo.getAll());
-    setShowModal(false);
-    resetForm();
   };
 
   const handleEdit = (site: ReferenceSite) => {
@@ -39,10 +59,15 @@ export default function ReferenceCSESites() {
     setShowModal(true);
   };
 
-  const handleDelete = (id: string) => {
+  const handleDelete = async (id: string) => {
     if (confirm('Are you sure you want to delete this reference site?')) {
-      referenceSiteRepo.delete(id);
-      setSites(referenceSiteRepo.getAll());
+      try {
+        await referenceSiteRepo.delete(id);
+        await loadSites();
+      } catch (error) {
+        console.error('Error deleting reference site:', error);
+        alert('Failed to delete reference site. Please try again.');
+      }
     }
   };
 
@@ -55,6 +80,14 @@ export default function ReferenceCSESites() {
       notes: ''
     });
   };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+      </div>
+    );
+  }
 
   return (
     <div>

@@ -1,12 +1,14 @@
 import React, { useState } from 'react';
 import { Plus, Edit, Trash2, Eye, Calendar, Wand2, Loader } from 'lucide-react';
-import { articleRepo, categoryRepo } from '../lib/repo';
+import { articleRepo, categoryRepo } from '../lib/mysqlRepo';
 import { generateArticleContent } from '../lib/contentGen';
 import { useAdminStore } from '../lib/adminStore';
-import type { Article } from '../lib/repo';
+import type { Article } from '../lib/mysqlRepo';
 
 export default function Articles() {
-  const [articles, setArticles] = useState(articleRepo.getAll());
+  const [articles, setArticles] = useState([]);
+  const [categories, setCategories] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
   const [editingArticle, setEditingArticle] = useState<Article | null>(null);
   const [generatingContent, setGeneratingContent] = useState(false);
@@ -24,8 +26,26 @@ export default function Articles() {
     cseKeyword: ''
   });
 
-  const categories = categoryRepo.getAll();
   const settings = useAdminStore(state => state.settings);
+
+  useEffect(() => {
+    loadData();
+  }, []);
+
+  const loadData = async () => {
+    try {
+      const [articlesData, categoriesData] = await Promise.all([
+        articleRepo.getAll(),
+        categoryRepo.getAll()
+      ]);
+      setArticles(articlesData);
+      setCategories(categoriesData);
+    } catch (error) {
+      console.error('Error loading data:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const countWords = (text: string): number => {
     return text.trim().split(/\s+/).length;
@@ -36,19 +56,23 @@ export default function Articles() {
     
     const articleData = {
       ...formData,
-      wordCount: countWords(formData.content),
-      publishDate: editingArticle?.publishDate || new Date().toISOString()
+      word_count: countWords(formData.content),
+      publish_date: editingArticle?.publish_date || new Date().toISOString()
     };
     
-    if (editingArticle) {
-      articleRepo.update(editingArticle.id, articleData);
-    } else {
-      articleRepo.create(articleData);
+    try {
+      if (editingArticle) {
+        await articleRepo.update(editingArticle.id, articleData);
+      } else {
+        await articleRepo.create(articleData);
+      }
+      await loadData();
+      setShowModal(false);
+      resetForm();
+    } catch (error) {
+      console.error('Error saving article:', error);
+      alert('Failed to save article. Please try again.');
     }
-    
-    setArticles(articleRepo.getAll());
-    setShowModal(false);
-    resetForm();
   };
 
   const handleEdit = (article: Article) => {
@@ -60,18 +84,23 @@ export default function Articles() {
       heroImage: article.heroImage,
       content: article.content,
       author: article.author,
-      categoryId: article.categoryId,
+      categoryId: article.category_id,
       status: article.status,
-      disableAds: article.disableAds,
-      cseKeyword: article.cseKeyword || ''
+      disableAds: article.disable_ads,
+      cseKeyword: article.cse_keyword || ''
     });
     setShowModal(true);
   };
 
-  const handleDelete = (id: string) => {
+  const handleDelete = async (id: string) => {
     if (confirm('Are you sure you want to delete this article?')) {
-      articleRepo.delete(id);
-      setArticles(articleRepo.getAll());
+      try {
+        await articleRepo.delete(id);
+        await loadData();
+      } catch (error) {
+        console.error('Error deleting article:', error);
+        alert('Failed to delete article. Please try again.');
+      }
     }
   };
 
@@ -92,7 +121,7 @@ export default function Articles() {
   };
 
   const wordCount = countWords(formData.content);
-  const adCount = formData.disableAds ? 0 : (wordCount >= 400 ? 2 : (wordCount > 0 ? 1 : 0));
+  const adCount = formData.disableAds ? 0 : (wordCount >= settings.adRules.lowWordCount ? settings.adRules.highWordAds : settings.adRules.lowWordAds);
 
   const handleGenerateContent = async () => {
     if (!formData.title || !formData.categoryId) {
@@ -143,6 +172,15 @@ export default function Articles() {
       setGeneratingContent(false);
     }
   };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+      </div>
+    );
+  }
+
   return (
     <div>
       <div className="flex items-center justify-between mb-8">
@@ -187,14 +225,14 @@ export default function Articles() {
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
               {articles.map((article) => {
-                const category = categoryRepo.getById(article.categoryId);
+                const category = categories.find(c => c.id === article.category_id);
                 return (
                   <tr key={article.id} className="hover:bg-gray-50">
                     <td className="px-6 py-4">
                       <div className="flex items-center">
                         {article.heroImage ? (
                           <img
-                            src={article.heroImage}
+                            src={article.hero_image}
                             alt={article.title}
                             className="h-10 w-10 object-cover rounded-lg mr-3"
                             onError={(e) => {
@@ -226,13 +264,13 @@ export default function Articles() {
                       </span>
                     </td>
                     <td className="px-6 py-4 text-sm text-gray-900">
-                      {article.wordCount}
+                      {article.word_count}
                       <span className="text-xs text-gray-500 ml-1">
-                        ({article.disableAds ? '0' : article.wordCount >= 400 ? '2' : '1'} ads)
+                        ({article.disable_ads ? '0' : article.word_count >= settings.adRules.lowWordCount ? settings.adRules.highWordAds : settings.adRules.lowWordAds} ads)
                       </span>
                     </td>
                     <td className="px-6 py-4 text-sm text-gray-500">
-                      {new Date(article.publishDate).toLocaleDateString()}
+                      {new Date(article.publish_date).toLocaleDateString()}
                     </td>
                     <td className="px-6 py-4 text-right text-sm font-medium">
                       <div className="flex items-center justify-end space-x-2">

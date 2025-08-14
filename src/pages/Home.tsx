@@ -6,13 +6,33 @@ import SeoHead from '../components/SeoHead';
 import NewsSection from '../components/NewsSection';
 import CurrencyWidget from '../components/CurrencyWidget';
 import YouTubeVideos from '../components/YouTubeVideos';
-import { categoryRepo, articleRepo } from '../lib/repo';
+import { categoryRepo, articleRepo } from '../lib/mysqlRepo';
 import { useAdminStore } from '../lib/adminStore';
 
 export default function Home() {
-  const categories = categoryRepo.getAll();
-  const recentArticles = articleRepo.getAll().slice(0, 6);
+  const [categories, setCategories] = useState([]);
+  const [recentArticles, setRecentArticles] = useState([]);
+  const [loading, setLoading] = useState(true);
   const settings = useAdminStore(state => state.settings);
+
+  useEffect(() => {
+    async function loadData() {
+      try {
+        const [categoriesData, articlesData] = await Promise.all([
+          categoryRepo.getAll(),
+          articleRepo.getPublished(6)
+        ]);
+        setCategories(categoriesData);
+        setRecentArticles(articlesData);
+      } catch (error) {
+        console.error('Error loading home data:', error);
+      } finally {
+        setLoading(false);
+      }
+    }
+    
+    loadData();
+  }, []);
 
   const categoryIcons = {
     'credit-cards': CreditCard,
@@ -21,6 +41,14 @@ export default function Home() {
     'investing': TrendingUp,
     'insurance': Shield
   };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+      </div>
+    );
+  }
 
   return (
     <>

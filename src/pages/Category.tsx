@@ -3,15 +3,51 @@ import { useParams, Link } from 'react-router-dom';
 import { ArrowRight } from 'lucide-react';
 import SeoHead from '../components/SeoHead';
 import PopularQueries from '../components/PopularQueries';
-import { categoryRepo, articleRepo } from '../lib/repo';
+import { categoryRepo, articleRepo } from '../lib/mysqlRepo';
 import { generateBreadcrumbJSONLD } from '../lib/seo';
 
 export default function Category() {
   const { slug } = useParams<{ slug: string }>();
-  const category = categoryRepo.getAll().find(c => c.slug === slug);
-  const categoryArticles = articleRepo.getAll()
-    .filter(a => a.categoryId === category?.id)
-    .slice(0, 20);
+  const [category, setCategory] = useState(null);
+  const [categoryArticles, setCategoryArticles] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    async function loadCategoryData() {
+      if (!slug) return;
+      
+      try {
+        const categoryData = await categoryRepo.getBySlug(slug);
+        if (categoryData) {
+          setCategory(categoryData);
+          const articles = await articleRepo.getByCategory(categoryData.id, 20);
+          setCategoryArticles(articles);
+        }
+      } catch (error) {
+        console.error('Error loading category data:', error);
+      } finally {
+        setLoading(false);
+      }
+    }
+    
+    loadCategoryData();
+  }, [slug]);
+
+  if (loading) {
+    return (
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="animate-pulse">
+          <div className="h-8 bg-gray-300 rounded mb-4"></div>
+          <div className="h-4 bg-gray-300 rounded mb-8"></div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {[...Array(6)].map((_, i) => (
+              <div key={i} className="h-32 bg-gray-300 rounded"></div>
+            ))}
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   if (!category) {
     return (

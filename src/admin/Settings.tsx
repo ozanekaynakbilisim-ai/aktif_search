@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Save, TestTube, CheckCircle, XCircle, Eye, EyeOff } from 'lucide-react';
-import { useAdminStore } from '../lib/adminStore';
+import { useAdminStore } from '../lib/mysqlAdminStore';
 import { fetchFinanceNews } from '../lib/newsApi';
 import { fetchYouTubeVideos } from '../lib/youtubeApi';
 
@@ -9,6 +9,7 @@ export default function Settings() {
   const [activeTab, setActiveTab] = useState('branding');
   const [testResults, setTestResults] = useState<any>({});
   const [testing, setTesting] = useState<string | null>(null);
+  const [saving, setSaving] = useState(false);
 
   const tabs = [
     { id: 'branding', name: 'Branding' },
@@ -21,8 +22,17 @@ export default function Settings() {
     { id: 'apis', name: 'External APIs' }
   ];
 
-  const handleSave = () => {
-    alert('Settings saved successfully!');
+  const handleSave = async () => {
+    setSaving(true);
+    try {
+      await updateSettings(settings);
+      alert('Settings saved successfully!');
+    } catch (error) {
+      console.error('Error saving settings:', error);
+      alert('Failed to save settings. Please try again.');
+    } finally {
+      setSaving(false);
+    }
   };
 
   // API Test Functions
@@ -865,10 +875,20 @@ export default function Settings() {
       <div className="flex justify-end">
         <button
           onClick={handleSave}
+          disabled={saving}
           className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors flex items-center"
         >
-          <Save className="h-4 w-4 mr-2" />
-          Save Settings
+          {saving ? (
+            <>
+              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+              Saving...
+            </>
+          ) : (
+            <>
+              <Save className="h-4 w-4 mr-2" />
+              Save Settings
+            </>
+          )}
         </button>
       </div>
     </div>

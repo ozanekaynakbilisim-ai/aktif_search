@@ -2,7 +2,7 @@ import React from 'react';
 import { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { Menu, Search, Settings, X } from 'lucide-react';
-import { useAdminStore } from '../lib/adminStore';
+import { useAdminStore } from '../lib/mysqlAdminStore';
 import GlobalSearch from './GlobalSearch';
 
 export default function Header() {

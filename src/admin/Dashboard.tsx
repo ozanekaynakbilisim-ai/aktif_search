@@ -10,13 +10,33 @@ import {
   TrendingUp,
   Eye
 } from 'lucide-react';
-import { categoryRepo, articleRepo } from '../lib/repo';
+import { categoryRepo, articleRepo } from '../lib/mysqlRepo';
 import { useAdminStore } from '../lib/adminStore';
 
 export default function Dashboard() {
-  const categories = categoryRepo.getAll();
-  const articles = articleRepo.getAll();
+  const [categories, setCategories] = useState([]);
+  const [articles, setArticles] = useState([]);
+  const [loading, setLoading] = useState(true);
   const settings = useAdminStore(state => state.settings);
+
+  useEffect(() => {
+    async function loadDashboardData() {
+      try {
+        const [categoriesData, articlesData] = await Promise.all([
+          categoryRepo.getAll(),
+          articleRepo.getAll()
+        ]);
+        setCategories(categoriesData);
+        setArticles(articlesData);
+      } catch (error) {
+        console.error('Error loading dashboard data:', error);
+      } finally {
+        setLoading(false);
+      }
+    }
+    
+    loadDashboardData();
+  }, []);
 
   const stats = [
     {
@@ -39,7 +59,7 @@ export default function Dashboard() {
     },
     {
       name: 'High-CPC Categories',
-      value: categories.filter(c => c.isHighCpc).length,
+      value: categories.filter(c => c.is_high_cpc).length,
       icon: TrendingUp,
       color: 'bg-purple-500'
     }
@@ -51,6 +71,14 @@ export default function Dashboard() {
     { name: 'CSE Settings', href: '/admin/settings', icon: Search },
     { name: 'User Management', href: '/admin/users', icon: Users }
   ];
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+      </div>
+    );
+  }
 
   return (
     <div>
@@ -111,7 +139,7 @@ export default function Dashboard() {
                 <div className="flex-1">
                   <h3 className="font-medium text-gray-900 text-sm">{article.title}</h3>
                   <p className="text-xs text-gray-500">
-                    {article.status} • {new Date(article.publishDate).toLocaleDateString()}
+                    {article.status} • {new Date(article.publish_date).toLocaleDateString()}
                   </p>
                 </div>
                 <Link

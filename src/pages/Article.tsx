@@ -9,16 +9,44 @@ import NewsSection from '../components/NewsSection';
 import YouTubeVideos from '../components/YouTubeVideos';
 import CurrencyWidget from '../components/CurrencyWidget';
 import { loadPSE, execute } from '../lib/pse';
-import { articleRepo, categoryRepo } from '../lib/repo';
+import { articleRepo, categoryRepo } from '../lib/mysqlRepo';
 import { generateArticleJSONLD, generateBreadcrumbJSONLD } from '../lib/seo';
 import { useAdminStore } from '../lib/adminStore';
 
 export default function Article() {
   const { slug } = useParams<{ slug: string }>();
   const [cseLoaded, setCseLoaded] = useState(false);
-  const article = articleRepo.getAll().find(a => a.slug === slug);
-  const category = article ? categoryRepo.getById(article.categoryId) : null;
+  const [article, setArticle] = useState(null);
+  const [category, setCategory] = useState(null);
+  const [relatedArticles, setRelatedArticles] = useState([]);
+  const [loading, setLoading] = useState(true);
   const settings = useAdminStore(state => state.settings);
+
+  useEffect(() => {
+    async function loadArticleData() {
+      if (!slug) return;
+      
+      try {
+        const articleData = await articleRepo.getBySlug(slug);
+        if (articleData) {
+          setArticle(articleData);
+          const categoryData = await categoryRepo.getById(articleData.category_id);
+          setCategory(categoryData);
+          
+          if (categoryData) {
+            const related = await articleRepo.getByCategory(categoryData.id, 5);
+            setRelatedArticles(related.filter(a => a.id !== articleData.id));
+          }
+        }
+      } catch (error) {
+        console.error('Error loading article data:', error);
+      } finally {
+        setLoading(false);
+      }
+    }
+    
+    loadArticleData();
+  }, [slug]);
 
   // Generate FAQ from article content
   const generateFAQs = (title: string, content: string) => {
@@ -105,6 +133,22 @@ export default function Article() {
     loadCSEResults();
   }, [article, settings.cxId, cseLoaded]);
 
+  if (loading) {
+    return (
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="animate-pulse">
+          <div className="h-8 bg-gray-300 rounded mb-4"></div>
+          <div className="h-4 bg-gray-300 rounded mb-8"></div>
+          <div className="space-y-4">
+            {[...Array(5)].map((_, i) => (
+              <div key={i} className="h-4 bg-gray-300 rounded"></div>
+            ))}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   if (!article || !category) {
     return (
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -113,8 +157,8 @@ export default function Article() {
     );
   }
 
-  const shouldShowTwoAds = article.wordCount >= settings.adRules.lowWordCount && !article.disableAds;
-  const shouldShowOneAd = article.wordCount < settings.adRules.lowWordCount && !article.disableAds;
+  const shouldShowTwoAds = article.word_count >= settings.adRules.lowWordCount && !article.disable_ads;
+  const shouldShowOneAd = article.word_count < settings.adRules.lowWordCount && !article.disable_ads;
 
   const articleJSONLD = generateArticleJSONLD(article, category);
   const breadcrumbJSONLD = generateBreadcrumbJSONLD([
@@ -137,7 +181,7 @@ export default function Article() {
         ogImage={article.heroImage}
         articleData={{
           author: article.author,
-          publishDate: article.publishDate
+          publishDate: article.publish_date
         }}
         jsonLd={[articleJSONLD, breadcrumbJSONLD]}
       />
@@ -211,9 +255,7 @@ export default function Article() {
             <section className="mt-12 pt-8 border-t border-gray-200">
               <h3 className="text-2xl font-bold text-gray-900 mb-6">Related Articles</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {articleRepo.getAll()
-                  .filter(a => a.categoryId === article.categoryId && a.id !== article.id)
-                  .slice(0, 4)
+                {relatedArticles.slice(0, 4)
                   .map((relatedArticle) => (
                     <Link
                       key={relatedArticle.id}
